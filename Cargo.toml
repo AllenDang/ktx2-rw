@@ -1,0 +1,26 @@
+[package]
+name = "ktx2-rw"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+libc = "0.2"
+
+[build-dependencies]
+bindgen = "0.72"
+
+[dev-dependencies]
+image = "0.25"
+
+[[example]]
+name = "basic_usage"
+path = "examples/basic_usage.rs"
+
+[[example]]
+name = "png_to_ktx2"
+path = "examples/png_to_ktx2.rs"
+
+# Optional: Add this section to make examples more discoverable
+[package.metadata.docs.rs]
+all-features = true
+targets = ["x86_64-unknown-linux-gnu"]
