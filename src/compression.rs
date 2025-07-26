@@ -335,7 +335,7 @@ impl From<&BasisCompressionParams> for ktxBasisParams {
         };
 
         for i in 0..4 {
-            ktx_params.inputSwizzle[i] = params.input_swizzle[i] as i8;
+            ktx_params.inputSwizzle[i] = params.input_swizzle[i] as std::os::raw::c_char;
         }
 
         ktx_params
