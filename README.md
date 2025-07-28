@@ -20,7 +20,7 @@ Add this to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-ktx2-rw = "0.1"
+ktx2-rw = { git = "https://github.com/AllenDang/ktx2-rw" }
 ```
 
 ### Basic Usage
@@ -35,9 +35,15 @@ let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, 37)?; // RGBA8
 let rgba_data: Vec<u8> = generate_image_data();
 texture.set_image_data(0, 0, 0, &rgba_data)?;
 
-// Compress with Basis Universal
-let compression_params = BasisCompressionParams::default();
+// Compress with Basis Universal using the builder pattern
+let compression_params = BasisCompressionParams::builder()
+    .quality_level(128)
+    .thread_count(4)
+    .build();
 texture.compress_basis(&compression_params)?;
+
+// For simple compression, you can also use:
+texture.compress_basis_simple(128)?; // Quality level only
 
 // Save to file
 texture.write_to_file("texture.ktx2")?;
@@ -55,12 +61,14 @@ transcoded.transcode_basis(TranscodeFormat::Bc7Rgba)?;
 ```rust
 use ktx2_rw::BasisCompressionParams;
 
-let mut params = BasisCompressionParams::default();
-params.uastc = true;                    // Use UASTC (higher quality)
-params.quality_level = 255;             // Maximum quality
-params.thread_count = 8;                // Multi-threaded compression
-params.normal_map = true;               // Optimize for normal maps
-params.uastc_rdo_quality_scalar = 1.0;  // RDO quality
+// Using the builder pattern for configuration
+let params = BasisCompressionParams::builder()
+    .uastc(true)                        // Use UASTC (higher quality)
+    .quality_level(255)                 // Maximum quality
+    .thread_count(8)                    // Multi-threaded compression
+    .normal_map(true)                   // Optimize for normal maps
+    .uastc_rdo_quality_scalar(1.0)      // RDO quality
+    .build();
 
 texture.compress_basis(&params)?;
 ```
@@ -68,11 +76,11 @@ texture.compress_basis(&params)?;
 ## Supported Platforms
 
 | Platform | Architecture | Status |
-|----------|-------------|--------|
-| Windows  | x64         | ✅      |
-| macOS    | x64         | ✅      |
-| macOS    | ARM64       | ✅      |
-| Linux    | x64         | ✅      |
+| -------- | ------------ | ------ |
+| Windows  | x64          | ✅     |
+| macOS    | x64          | ✅     |
+| macOS    | ARM64        | ✅     |
+| Linux    | x64          | ✅     |
 
 ## Transcoding Formats
 
@@ -88,12 +96,14 @@ The library supports transcoding to all major GPU texture formats:
 
 - `Ktx2Texture` - Main texture handle with safe lifetime management
 - `BasisCompressionParams` - Comprehensive compression settings
+  - `BasisCompressionParams::builder()` - Fluent builder for creating params
 - `TranscodeFormat` - Supported GPU texture formats
 - `Error` - Detailed error types with proper error messages
 
 ### Key Methods
 
 #### Creation and Loading
+
 ```rust
 Ktx2Texture::create(width, height, depth, layers, faces, levels, vk_format)
 Ktx2Texture::from_file(path)
@@ -101,26 +111,31 @@ Ktx2Texture::from_memory(bytes)
 ```
 
 #### Texture Operations
+
 ```rust
 texture.compress_basis(params)           // Compress with Basis Universal
+texture.compress_basis_simple(quality)   // Simple compression with quality level
 texture.transcode_basis(format)          // Transcode to GPU format
 texture.get_image_data(level, layer, face) // Get raw image data
 texture.set_image_data(level, layer, face, data) // Set image data
 ```
 
 #### I/O Operations
+
 ```rust
 texture.write_to_file(path)              // Save to file
 texture.write_to_memory()                // Export to bytes
 ```
 
 #### Metadata
+
 ```rust
 texture.set_metadata(key, value)         // Set custom metadata
 texture.get_metadata(key)                // Read metadata
 ```
 
 #### Properties
+
 ```rust
 texture.width(), texture.height(), texture.depth()
 texture.layers(), texture.faces(), texture.levels()
@@ -159,3 +174,4 @@ This library is provided under the same license terms as the underlying KTX2 lib
 ## Contributing
 
 Contributions are welcome! Please ensure all tests pass and follow Rust coding conventions.
+
