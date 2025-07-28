@@ -1,5 +1,5 @@
 use image::ImageReader;
-use ktx2_rw::{BasisCompressionParams, Ktx2Texture, Result, TranscodeFormat};
+use ktx2_rw::{BasisCompressionParams, Ktx2Texture, Result, TranscodeFormat, VkFormat};
 use std::env;
 use std::path::Path;
 
@@ -44,11 +44,13 @@ fn main() -> Result<()> {
     // Step 2: Create KTX2 texture
     println!("\n2. Creating KTX2 texture...");
     let mut texture = Ktx2Texture::create(
-        width, height, 1,  // depth
-        1,  // layers
-        1,  // faces
-        1,  // levels
-        37, // vk_format (VK_FORMAT_R8G8B8A8_UNORM)
+        width,
+        height,
+        1,                       // depth
+        1,                       // layers
+        1,                       // faces
+        1,                       // levels
+        VkFormat::R8G8B8A8Unorm, // vk_format (VK_FORMAT_R8G8B8A8_UNORM)
     )?;
 
     // Step 3: Set image data
@@ -70,7 +72,8 @@ fn main() -> Result<()> {
 
     // Create two versions with different compression settings
     let mut texture_etc1s = texture;
-    let mut texture_uastc = Ktx2Texture::create(width, height, 1, 1, 1, 1, 37)?;
+    let mut texture_uastc =
+        Ktx2Texture::create(width, height, 1, 1, 1, 1, VkFormat::R8G8B8A8Unorm)?;
     texture_uastc.set_image_data(0, 0, 0, image_data)?;
     texture_uastc.set_metadata("CompressionMode", b"UASTC")?;
 
@@ -153,7 +156,7 @@ fn main() -> Result<()> {
     let loaded_texture = Ktx2Texture::from_memory(&etc1s_data)?;
 
     println!(
-        "Loaded texture: {}x{} (format: {})",
+        "Loaded texture: {}x{} (format: {:?})",
         loaded_texture.width(),
         loaded_texture.height(),
         loaded_texture.vk_format()

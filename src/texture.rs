@@ -7,6 +7,7 @@ use crate::bindings::*;
 use crate::compression::BasisCompressionParams;
 use crate::error::{Error, Result};
 use crate::format::TranscodeFormat;
+use crate::vk_format::VkFormat;
 
 /// Main texture handle for KTX2 textures
 ///
@@ -25,11 +26,11 @@ use crate::format::TranscodeFormat;
 /// # Examples
 ///
 /// ```rust,no_run
-/// use ktx2_rw::{Ktx2Texture, BasisCompressionParams, TranscodeFormat};
+/// use ktx2_rw::{Ktx2Texture, BasisCompressionParams, VkFormat};
 /// # fn main() -> ktx2_rw::Result<()> {
 ///
 /// // Create a new texture
-/// let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, 37)?;
+/// let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, VkFormat::R8G8B8A8Unorm)?;
 ///
 /// // Load from file
 /// let texture = Ktx2Texture::from_file("texture.ktx2")?;
@@ -92,7 +93,7 @@ impl Ktx2Texture {
         layers: u32,
         faces: u32,
         levels: u32,
-        vk_format: u32,
+        vk_format: VkFormat,
     ) -> Result<Self> {
         // Validate input parameters
         if width == 0 || height == 0 {
@@ -110,7 +111,7 @@ impl Ktx2Texture {
 
         let create_info = ktxTextureCreateInfo {
             glInternalformat: 0,
-            vkFormat: vk_format,
+            vkFormat: vk_format.as_raw(),
             pDfd: ptr::null_mut(),
             baseWidth: width,
             baseHeight: height,
@@ -193,11 +194,11 @@ impl Ktx2Texture {
         unsafe { (*self.texture).numLevels }
     }
 
-    pub fn vk_format(&self) -> u32 {
+    pub fn vk_format(&self) -> VkFormat {
         if self.texture.is_null() {
-            return 0;
+            return VkFormat::Undefined;
         }
-        unsafe { (*self.texture).vkFormat }
+        unsafe { VkFormat::from_raw((*self.texture).vkFormat).unwrap_or(VkFormat::Undefined) }
     }
 
     pub fn is_array(&self) -> bool {

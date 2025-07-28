@@ -26,10 +26,10 @@ ktx2-rw = { git = "https://github.com/AllenDang/ktx2-rw" }
 ### Basic Usage
 
 ```rust
-use ktx2_rw::{Ktx2Texture, BasisCompressionParams, TranscodeFormat};
+use ktx2_rw::{Ktx2Texture, BasisCompressionParams, TranscodeFormat, VkFormat};
 
 // Create a new texture
-let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, 37)?; // RGBA8
+let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, VkFormat::R8G8B8A8Unorm)?; // RGBA8
 
 // Add image data (512x512 RGBA)
 let rgba_data: Vec<u8> = generate_image_data();

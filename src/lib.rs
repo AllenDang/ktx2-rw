@@ -14,11 +14,11 @@
 //! ## Quick Start
 //!
 //! ```rust,no_run
-//! use ktx2_rw::{Ktx2Texture, BasisCompressionParams};
+//! use ktx2_rw::{Ktx2Texture, BasisCompressionParams, VkFormat};
 //! # fn main() -> ktx2_rw::Result<()> {
 //!
 //! // Create a new texture
-//! let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, 37)?; // RGBA8
+//! let mut texture = Ktx2Texture::create(512, 512, 1, 1, 1, 1, VkFormat::R8G8B8A8Unorm)?; // RGBA8
 //!
 //! // Load from file
 //! let mut texture = Ktx2Texture::from_file("texture.ktx2")?;
@@ -39,6 +39,7 @@ mod compression;
 mod error;
 mod format;
 mod texture;
+mod vk_format;
 
 #[cfg(test)]
 mod tests;
@@ -48,3 +49,4 @@ pub use compression::{BasisCompressionParams, BasisCompressionParamsBuilder};
 pub use error::{Error, Result};
 pub use format::TranscodeFormat;
 pub use texture::Ktx2Texture;
+pub use vk_format::VkFormat;

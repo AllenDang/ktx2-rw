@@ -1,4 +1,4 @@
-use ktx2_rw::{BasisCompressionParams, Ktx2Texture, Result, TranscodeFormat};
+use ktx2_rw::{BasisCompressionParams, Ktx2Texture, Result, TranscodeFormat, VkFormat};
 
 fn main() -> Result<()> {
     println!("KTX2 Rust Wrapper Example");
@@ -6,17 +6,17 @@ fn main() -> Result<()> {
     // Example 1: Create a new KTX2 texture from scratch
     println!("\n1. Creating a new KTX2 texture...");
     let mut texture = Ktx2Texture::create(
-        512, // width
-        512, // height
-        1,   // depth
-        1,   // layers
-        1,   // faces
-        1,   // levels
-        37,  // vk_format (VK_FORMAT_R8G8B8A8_UNORM)
+        512,                     // width
+        512,                     // height
+        1,                       // depth
+        1,                       // layers
+        1,                       // faces
+        1,                       // levels
+        VkFormat::R8G8B8A8Unorm, // vk_format (VK_FORMAT_R8G8B8A8_UNORM)
     )?;
 
     println!(
-        "Created texture: {}x{} (format: {})",
+        "Created texture: {}x{} (format: {:?})",
         texture.width(),
         texture.height(),
         texture.vk_format()
@@ -54,7 +54,7 @@ fn main() -> Result<()> {
     let loaded_texture = Ktx2Texture::from_memory(&ktx_data)?;
 
     println!(
-        "Loaded texture: {}x{} (format: {})",
+        "Loaded texture: {}x{} (format: {:?})",
         loaded_texture.width(),
         loaded_texture.height(),
         loaded_texture.vk_format()
