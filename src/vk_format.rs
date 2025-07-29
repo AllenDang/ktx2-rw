@@ -25,11 +25,17 @@ pub enum VkFormat {
     /// 8-bit R, G, B and A components, unsigned normalized
     R8G8B8A8Unorm = 37,
 
+    /// 8-bit R, G, B and A components, sRGB
+    R8G8B8A8Srgb = 43,
+
     /// 8-bit B, G and R components, unsigned normalized
     B8G8R8Unorm = 30,
 
     /// 8-bit B, G, R and A components, unsigned normalized
     B8G8R8A8Unorm = 44,
+
+    /// 8-bit B, G, R and A components, sRGB
+    B8G8R8A8Srgb = 50,
 
     /// 32-bit R component, signed float
     R32Sfloat = 100,
@@ -55,8 +61,14 @@ pub enum VkFormat {
     /// BC1 compressed format with alpha (DXT1)
     Bc1RgbaUnormBlock = 132,
 
+    /// BC1 compressed format with alpha (DXT1), sRGB
+    Bc1RgbaSrgbBlock = 134,
+
     /// BC3 compressed format (DXT5)
-    Bc3UnormBlock = 134,
+    Bc3UnormBlock = 136,
+
+    /// BC3 compressed format (DXT5), sRGB
+    Bc3SrgbBlock = 138,
 
     /// BC4 compressed format (unsigned)
     Bc4UnormBlock = 137,
@@ -65,22 +77,40 @@ pub enum VkFormat {
     Bc5UnormBlock = 140,
 
     /// BC7 compressed format
-    Bc7UnormBlock = 148,
+    Bc7UnormBlock = 145,
+
+    /// BC7 compressed format (sRGB)
+    Bc7SrgbBlock = 146,
 
     /// ETC2 compressed format (RGB)
-    Etc2R8G8B8UnormBlock = 150,
+    Etc2R8G8B8UnormBlock = 147,
+
+    /// ETC2 compressed format (RGB, sRGB)
+    Etc2R8G8B8SrgbBlock = 148,
 
     /// ETC2 compressed format with alpha
-    Etc2R8G8B8A1UnormBlock = 151,
+    Etc2R8G8B8A1UnormBlock = 149,
+
+    /// ETC2 compressed format with alpha (sRGB)
+    Etc2R8G8B8A1SrgbBlock = 150,
 
     /// ETC2 compressed format with EAC alpha
-    Etc2R8G8B8A8UnormBlock = 152,
+    Etc2R8G8B8A8UnormBlock = 151,
+
+    /// ETC2 compressed format with EAC alpha (sRGB)
+    Etc2R8G8B8A8SrgbBlock = 152,
 
     /// ASTC 4x4 compressed format
     Astc4x4UnormBlock = 157,
 
+    /// ASTC 4x4 compressed format (sRGB)
+    Astc4x4SrgbBlock = 158,
+
     /// ASTC 8x8 compressed format
-    Astc8x8UnormBlock = 166,
+    Astc8x8UnormBlock = 165,
+
+    /// ASTC 8x8 compressed format (sRGB)
+    Astc8x8SrgbBlock = 172,
 }
 
 impl VkFormat {
@@ -99,8 +129,10 @@ impl VkFormat {
             16 => Some(VkFormat::R8G8Unorm),
             23 => Some(VkFormat::R8G8B8Unorm),
             37 => Some(VkFormat::R8G8B8A8Unorm),
+            43 => Some(VkFormat::R8G8B8A8Srgb),
             30 => Some(VkFormat::B8G8R8Unorm),
             44 => Some(VkFormat::B8G8R8A8Unorm),
+            50 => Some(VkFormat::B8G8R8A8Srgb),
             100 => Some(VkFormat::R32Sfloat),
             103 => Some(VkFormat::R32G32Sfloat),
             109 => Some(VkFormat::R32G32B32A32Sfloat),
@@ -109,15 +141,23 @@ impl VkFormat {
             97 => Some(VkFormat::R16G16B16A16Sfloat),
             131 => Some(VkFormat::Bc1RgbUnormBlock),
             132 => Some(VkFormat::Bc1RgbaUnormBlock),
-            134 => Some(VkFormat::Bc3UnormBlock),
+            134 => Some(VkFormat::Bc1RgbaSrgbBlock),
+            136 => Some(VkFormat::Bc3UnormBlock),
+            138 => Some(VkFormat::Bc3SrgbBlock),
             137 => Some(VkFormat::Bc4UnormBlock),
             140 => Some(VkFormat::Bc5UnormBlock),
-            148 => Some(VkFormat::Bc7UnormBlock),
-            150 => Some(VkFormat::Etc2R8G8B8UnormBlock),
-            151 => Some(VkFormat::Etc2R8G8B8A1UnormBlock),
-            152 => Some(VkFormat::Etc2R8G8B8A8UnormBlock),
+            145 => Some(VkFormat::Bc7UnormBlock),
+            146 => Some(VkFormat::Bc7SrgbBlock),
+            147 => Some(VkFormat::Etc2R8G8B8UnormBlock),
+            148 => Some(VkFormat::Etc2R8G8B8SrgbBlock),
+            149 => Some(VkFormat::Etc2R8G8B8A1UnormBlock),
+            150 => Some(VkFormat::Etc2R8G8B8A1SrgbBlock),
+            151 => Some(VkFormat::Etc2R8G8B8A8UnormBlock),
+            152 => Some(VkFormat::Etc2R8G8B8A8SrgbBlock),
             157 => Some(VkFormat::Astc4x4UnormBlock),
-            166 => Some(VkFormat::Astc8x8UnormBlock),
+            158 => Some(VkFormat::Astc4x4SrgbBlock),
+            165 => Some(VkFormat::Astc8x8UnormBlock),
+            172 => Some(VkFormat::Astc8x8SrgbBlock),
             _ => None,
         }
     }
