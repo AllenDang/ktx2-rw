@@ -52,6 +52,24 @@ fn main() {
     println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_OS");
     println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
     println!("cargo:rerun-if-env-changed=KTX_FEATURE_SSE");
+    println!("cargo:rerun-if-env-changed=CFLAGS");
+    println!("cargo:rerun-if-env-changed=CXXFLAGS");
+    println!("cargo:rerun-if-env-changed=CPPFLAGS");
+}
+
+/// Sanitize compiler flags from environment variables to prevent conflicts
+/// with KTX-Software's internal SIMD detection.
+///
+/// Custom architecture flags like `-march=znver3` can conflict with how
+/// KTX-Software enables/disables SIMD backends (SSE, AVX2, NEON), causing
+/// `basisu_kernels_sse.cpp` to fail with `#error Please check your compiler options`.
+/// See: https://github.com/AllenDang/ktx2-rw/issues/9
+fn sanitize_compiler_flags(flags: &str) -> String {
+    flags
+        .split_whitespace()
+        .filter(|flag| !flag.starts_with("-march=") && !flag.starts_with("-mtune="))
+        .collect::<Vec<_>>()
+        .join(" ")
 }
 
 fn build_ktx_software(
@@ -61,6 +79,22 @@ fn build_ktx_software(
     target_arch: &str,
     target_env: &str,
 ) {
+    // Sanitize environment compiler flags to prevent architecture-specific flags
+    // (e.g., -march=znver3) from conflicting with KTX-Software's SIMD detection.
+    // The cmake crate inherits CFLAGS/CXXFLAGS/CPPFLAGS from the environment and
+    // passes them to CMAKE_C_FLAGS/CMAKE_CXX_FLAGS, which can break basisu's SSE
+    // compilation even when KTX_FEATURE_SSE=0.
+    // See: https://github.com/AllenDang/ktx2-rw/issues/9
+    for var_name in ["CFLAGS", "CXXFLAGS", "CPPFLAGS"] {
+        if let Ok(val) = env::var(var_name) {
+            let sanitized = sanitize_compiler_flags(&val);
+            if sanitized != val {
+                // SAFETY: Build scripts are single-threaded
+                unsafe { env::set_var(var_name, &sanitized) };
+            }
+        }
+    }
+
     let ktx_source_dir = download_and_extract_ktx_software(out_dir);
     let ktx_build_dir = out_dir.join("KTX-Software-build");
 
