@@ -10,6 +10,7 @@ const OUTPUT_DIR_NAME: &str = "out";
 const KTX_BUILD_DIR_NAME: &str = "KTX-Software-build";
 const KTX_BINDINGS_FILE_NAME: &str = "bindings.rs";
 const LLVM_COV_TARGET_DIR: &str = "llvm-cov-target";
+const MIRI_TARGET_DIR: &str = "miri";
 const BUILD_DIR: &str = "build";
 const DEBUG_DIR: &str = "debug";
 const RELEASE_DIR: &str = "release";
@@ -73,6 +74,31 @@ impl BuildContext {
             .is_some_and(|name| name == LLVM_COV_TARGET_DIR)
     }
 
+    fn is_miri_build(&self) -> bool {
+        // Miri may have two path structures:
+        // 1. target/miri/debug/build/... (current_target_root = target/miri)
+        // 2. target/miri/x86_64-pc-windows-msvc/debug/build/... (current_target_root = target/miri/x86_64-pc-windows-msvc)
+        let target_name = self.current_target_root.file_name();
+        if target_name.is_some_and(|name| name == MIRI_TARGET_DIR) {
+            return true;
+        }
+        // Check if parent directory is miri (case 2)
+        self.is_miri_build_with_target()
+    }
+
+    fn is_miri_build_with_target(&self) -> bool {
+        // Check if this is miri with target arch subdirectory
+        // i.e. current_target_root = target/miri/x86_64-pc-windows-msvc
+        self.current_target_root
+            .parent()
+            .and_then(|p| p.file_name())
+            .is_some_and(|name| name == MIRI_TARGET_DIR)
+    }
+
+    fn is_special_build(&self) -> bool {
+        self.is_llvm_cov_build() || self.is_miri_build()
+    }
+
     fn is_release(&self) -> bool {
         self.current_build_root
             .parent()
@@ -81,14 +107,27 @@ impl BuildContext {
     }
 
     fn cargo_build_root(&self) -> PathBuf {
-        if !self.is_llvm_cov_build() {
+        if !self.is_special_build() {
             return self.current_build_root.clone();
         }
 
-        let cargo_target_root = self
-            .current_target_root
-            .parent()
-            .unwrap_or(&self.current_target_root);
+        // Calculate cargo_target_root:
+        // - llvm-cov: target/llvm-cov-target -> target
+        // - miri (no target): target/miri -> target
+        // - miri (with target): target/miri/x86_64-pc-windows-msvc -> target
+        let cargo_target_root = if self.is_miri_build_with_target() {
+            // miri with target arch subdirectory, need to go up two levels: target/miri/x86_64 -> target
+            self.current_target_root
+                .parent()
+                .and_then(|p| p.parent())
+                .unwrap_or(&self.current_target_root)
+        } else {
+            // llvm-cov or miri without target arch, go up one level
+            self.current_target_root
+                .parent()
+                .unwrap_or(&self.current_target_root)
+        };
+
         let profile = if self.is_release() {
             RELEASE_DIR
         } else {
@@ -101,10 +140,16 @@ impl BuildContext {
 fn find_cached_build(current_out_dir: &Path) -> Option<CachedBuild> {
     // current_out_dir:     project/target/debug/build/ktx2-rw-a2472af464f1a51e/out
     //                      project/target/llvm-cov-target/debug/build/ktx2-rw-a2472af464f1a51e/out
+    //                      project/target/miri/debug/build/ktx2-rw-a2472af464f1a51e/out
+    //                      project/target/miri/x86_64-pc-windows-msvc/debug/build/ktx2-rw-a2472af464f1a51e/out
     // current_build_root:  project/target/debug/build
     //                      project/target/llvm-cov-target/debug/build
+    //                      project/target/miri/debug/build
+    //                      project/target/miri/x86_64-pc-windows-msvc/debug/build
     // current_target_root: project/target
     //                      project/target/llvm-cov-target
+    //                      project/target/miri
+    //                      project/target/miri/x86_64-pc-windows-msvc
     // cargo_target_root:   project/target
     // cargo_build_root:    project/target/debug/build
 
@@ -116,12 +161,12 @@ fn search_cache_in_directory(build_root: &Path, current_out_dir: &Path) -> Optio
     fs::read_dir(build_root)
         .ok()?
         .filter_map(Result::ok)
-        .filter(|entry| is_candidate_package(entry.path(), current_out_dir))
+        .filter(|entry| is_candidate_package(&entry.path(), current_out_dir))
         .map(|entry| CachedBuild::from_package_dir(&entry.path()))
         .find(CachedBuild::validate)
 }
 
-fn is_candidate_package(candidate_path: PathBuf, current_out_dir: &Path) -> bool {
+fn is_candidate_package(candidate_path: &Path, current_out_dir: &Path) -> bool {
     let file_name = match candidate_path.file_name() {
         Some(name) => name.to_string_lossy(),
         None => return false,
