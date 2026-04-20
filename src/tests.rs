@@ -515,6 +515,55 @@ fn test_texture_create_3d() {
     assert_eq!(texture.depth(), 64);
 }
 
+#[test]
+fn test_texture_3d_per_slice_upload_roundtrip() {
+    let (w, h, d) = (16u32, 16u32, 4u32);
+    let mut texture = Ktx2Texture::create(w, h, d, 1, 1, 1, VkFormat::R8G8B8A8_UNORM).unwrap();
+
+    let slice_size = (w * h * 4) as usize;
+    for z in 0..d {
+        let slice: Vec<u8> = (0..slice_size)
+            .map(|i| ((z as usize + i) & 0xff) as u8)
+            .collect();
+        texture.set_image_data(0, 0, z, &slice).unwrap();
+    }
+
+    let bytes = texture.write_to_memory().unwrap();
+    let loaded = Ktx2Texture::from_memory(&bytes).unwrap();
+    assert_eq!(loaded.depth(), d);
+
+    for z in 0..d {
+        let got = loaded.get_image_data(0, 0, z).unwrap();
+        assert_eq!(got.len(), slice_size);
+        assert_eq!(got[0], z as u8);
+    }
+}
+
+#[test]
+fn test_texture_3d_whole_level_upload() {
+    use crate::FACE_SLICE_WHOLE_LEVEL;
+    let (w, h, d) = (16u32, 16u32, 4u32);
+    let mut texture = Ktx2Texture::create(w, h, d, 1, 1, 1, VkFormat::R8G8B8A8_UNORM).unwrap();
+
+    let level_size = (w * h * d * 4) as usize;
+    let data: Vec<u8> = (0..level_size).map(|i| (i & 0xff) as u8).collect();
+    texture
+        .set_image_data(0, 0, FACE_SLICE_WHOLE_LEVEL, &data)
+        .unwrap();
+
+    let bytes = texture.write_to_memory().unwrap();
+    let loaded = Ktx2Texture::from_memory(&bytes).unwrap();
+    assert_eq!(loaded.depth(), d);
+}
+
+#[test]
+fn test_texture_3d_slice_out_of_range() {
+    let mut texture = Ktx2Texture::create(16, 16, 4, 1, 1, 1, VkFormat::R8G8B8A8_UNORM).unwrap();
+    let slice = vec![0u8; 16 * 16 * 4];
+    let err = texture.set_image_data(0, 0, 4, &slice);
+    assert!(err.is_err());
+}
+
 // ============================================================================
 // Texture Property Tests
 // ============================================================================

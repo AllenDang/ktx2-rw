@@ -9,6 +9,11 @@ use crate::error::{Error, Result};
 use crate::format::TranscodeFormat;
 use crate::vk_format::VkFormat;
 
+/// Sentinel passed as `face_slice` to [`Ktx2Texture::set_image_data`] to upload all
+/// faces / depth slices of a mip level in a single call. Mirrors the
+/// `KTX_FACESLICE_WHOLE_LEVEL` constant in libktx.
+pub const FACE_SLICE_WHOLE_LEVEL: u32 = u32::MAX;
+
 /// Main texture handle for KTX2 textures
 ///
 /// This struct provides a safe, high-level interface to KTX2 textures with automatic
@@ -266,15 +271,24 @@ impl Ktx2Texture {
         }
     }
 
-    pub fn get_image_data(&self, level: u32, layer: u32, face: u32) -> Result<&[u8]> {
+    pub fn get_image_data(&self, level: u32, layer: u32, face_slice: u32) -> Result<&[u8]> {
         // Safety: Check texture validity first
         if self.texture.is_null() {
             return Err(Error::InvalidOperation);
         }
 
-        // Validate parameters against texture properties
+        // Validate parameters against texture properties.
+        // `face_slice` means cubemap face for cubemaps, depth slice for 3D, 0 otherwise.
         let texture = unsafe { &*self.texture };
-        if level >= texture.numLevels || layer >= texture.numLayers || face >= texture.numFaces {
+        if level >= texture.numLevels || layer >= texture.numLayers {
+            return Err(Error::InvalidValue);
+        }
+        let max_face_slice = if texture.isCubemap {
+            texture.numFaces
+        } else {
+            std::cmp::max(1, texture.baseDepth >> level)
+        };
+        if face_slice >= max_face_slice {
             return Err(Error::InvalidValue);
         }
 
@@ -292,7 +306,7 @@ impl Ktx2Texture {
                     self.texture as *mut ktxTexture,
                     level,
                     layer,
-                    face,
+                    face_slice,
                     &mut offset,
                 ),
                 None => return Err(Error::UnsupportedFeature),
@@ -328,16 +342,35 @@ impl Ktx2Texture {
         }
     }
 
-    pub fn set_image_data(&mut self, level: u32, layer: u32, face: u32, data: &[u8]) -> Result<()> {
+    pub fn set_image_data(
+        &mut self,
+        level: u32,
+        layer: u32,
+        face_slice: u32,
+        data: &[u8],
+    ) -> Result<()> {
         // Safety: Check texture validity first
         if self.texture.is_null() {
             return Err(Error::InvalidOperation);
         }
 
-        // Validate parameters against texture properties
+        // Validate parameters against texture properties.
+        // `face_slice` means cubemap face for cubemaps, depth slice for 3D textures,
+        // 0 for plain 2D, or `FACE_SLICE_WHOLE_LEVEL` to upload an entire mip level
+        // (all slices/faces) in one call.
         let texture = unsafe { &*self.texture };
-        if level >= texture.numLevels || layer >= texture.numLayers || face >= texture.numFaces {
+        if level >= texture.numLevels || layer >= texture.numLayers {
             return Err(Error::InvalidValue);
+        }
+        if face_slice != FACE_SLICE_WHOLE_LEVEL {
+            let max_face_slice = if texture.isCubemap {
+                texture.numFaces
+            } else {
+                std::cmp::max(1, texture.baseDepth >> level)
+            };
+            if face_slice >= max_face_slice {
+                return Err(Error::InvalidValue);
+            }
         }
 
         // Check data is not empty
@@ -357,7 +390,7 @@ impl Ktx2Texture {
                     self.texture as *mut ktxTexture,
                     level,
                     layer,
-                    face,
+                    face_slice,
                     data.as_ptr(),
                     data.len(),
                 ),

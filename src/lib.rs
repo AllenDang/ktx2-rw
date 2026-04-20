@@ -48,5 +48,5 @@ mod tests;
 pub use compression::{BasisCompressionParams, BasisCompressionParamsBuilder};
 pub use error::{Error, Result};
 pub use format::TranscodeFormat;
-pub use texture::Ktx2Texture;
+pub use texture::{FACE_SLICE_WHOLE_LEVEL, Ktx2Texture};
 pub use vk_format::VkFormat;
