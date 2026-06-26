@@ -47,7 +47,7 @@ fn main() {
     setup_bindgen(&out_dir, &target, &ktx_build_dir);
 
     // Invalidation rules
-    println!("cargo:rerun-if-changed=build.rs");
+    println!("cargo:rerun-if-changed=build");
     println!("cargo:rerun-if-env-changed=TARGET");
     println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_OS");
     println!("cargo:rerun-if-env-changed=CARGO_CFG_TARGET_ARCH");
