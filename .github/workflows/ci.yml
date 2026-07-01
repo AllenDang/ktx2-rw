@@ -47,7 +47,7 @@ jobs:
 
       - name: Clear stale cmake build (macOS)
         if: runner.os == 'macOS'
-        run: rm -rf target/*/build/ktx2-rw-*/out/KTX-Software-build/build
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null; true
 
       - name: Cache cargo registry
         uses: actions/cache@v4
@@ -122,7 +122,7 @@ jobs:
 
       - name: Clear stale cmake build (macOS)
         if: runner.os == 'macOS'
-        run: rm -rf target/*/build/ktx2-rw-*/out/KTX-Software-build/build
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null; true
 
       - name: Install libc++ (Linux)
         if: matrix.os == 'ubuntu-latest'
