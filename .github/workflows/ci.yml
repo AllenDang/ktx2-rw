@@ -27,6 +27,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check runner info
+        shell: pwsh
+        run: |
+          Write-Host "OS: ${{ runner.os }}"
+          Write-Host "ImageOS: $env:ImageOS"
+          if ($IsWindows) {
+            systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+          } elseif ($IsLinux) {
+            cat /etc/os-release | Select-String '^PRETTY_NAME|^VERSION_ID'
+          } elseif ($IsMacOS) {
+            sw_vers
+          }
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:

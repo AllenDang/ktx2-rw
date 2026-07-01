@@ -295,7 +295,8 @@ fn configure_cmake_for_target(
             } else {
                 // For MSVC targets, only use Visual Studio generator on Windows host
                 if cfg!(windows) {
-                    cmake_config.generator("Visual Studio 17 2022");
+                    // Auto-detect generator instead of forcing VS 2022,
+                    // which may not be available on all CI runners
                     if target_arch == "x86_64" {
                         cmake_config.define("CMAKE_GENERATOR_PLATFORM", "x64");
                     } else if target_arch == "aarch64" {
