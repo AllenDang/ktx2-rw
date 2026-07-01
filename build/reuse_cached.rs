@@ -166,12 +166,12 @@ fn find_cached_build(current_out_dir: &Path) -> Option<CachedBuild> {
     // output is identical regardless of the Rust build profile. Search the
     // sibling profile's build directory to share the cache across profiles.
     // e.g., when building debug, also check target/release/build; vice versa.
-    if let Some(sibling_root) = sibling_build_root(&build_root, context.is_release()) {
-        if sibling_root != build_root {
-            let found = search_cache_in_directory(&sibling_root, current_out_dir);
-            if found.is_some() {
-                return found;
-            }
+    if let Some(sibling_root) = sibling_build_root(&build_root, context.is_release())
+        && sibling_root != build_root
+    {
+        let found = search_cache_in_directory(&sibling_root, current_out_dir);
+        if found.is_some() {
+            return found;
         }
     }
 
