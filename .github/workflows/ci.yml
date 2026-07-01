@@ -45,10 +45,6 @@ jobs:
         with:
           targets: ${{ matrix.target }}
 
-      - name: Clear stale cmake build (macOS)
-        if: runner.os == 'macOS'
-        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
-
       - name: Cache cargo registry
         uses: actions/cache@v4
         with:
@@ -68,6 +64,10 @@ jobs:
           key: >
             ${{ runner.os }}-cargo-build-target-
             ${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Clear stale cmake build (macOS)
+        if: runner.os == 'macOS'
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Install libc++ (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -120,10 +120,6 @@ jobs:
           targets: ${{ matrix.target }}
 
 
-      - name: Clear stale cmake build (macOS)
-        if: runner.os == 'macOS'
-        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
-
       - name: Install libc++ (Linux)
         if: matrix.os == 'ubuntu-latest'
         run: |
@@ -141,6 +137,10 @@ jobs:
           key: >
             ${{ matrix.os }}-cargo-${{ matrix.target }}-
             ${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Clear stale cmake build (macOS)
+        if: runner.os == 'macOS'
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Build for target
         run: cargo build --target ${{ matrix.target }} --release
