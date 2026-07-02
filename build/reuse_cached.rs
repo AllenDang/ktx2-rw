@@ -154,7 +154,40 @@ fn find_cached_build(current_out_dir: &Path) -> Option<CachedBuild> {
     // cargo_build_root:    project/target/debug/build
 
     let context = BuildContext::from_out_dir(current_out_dir)?;
-    search_cache_in_directory(&context.cargo_build_root(), current_out_dir)
+    let build_root = context.cargo_build_root();
+
+    // Search the current profile's build directory first
+    let found = search_cache_in_directory(&build_root, current_out_dir);
+    if found.is_some() {
+        return found;
+    }
+
+    // The C library is always built with CMAKE_BUILD_TYPE=Release, so the
+    // output is identical regardless of the Rust build profile. Search the
+    // sibling profile's build directory to share the cache across profiles.
+    // e.g., when building debug, also check target/release/build; vice versa.
+    if let Some(sibling_root) = sibling_build_root(&build_root, context.is_release())
+        && sibling_root != build_root
+    {
+        let found = search_cache_in_directory(&sibling_root, current_out_dir);
+        if found.is_some() {
+            return found;
+        }
+    }
+
+    None
+}
+
+/// Compute the sibling profile's build root from a given build root.
+///
+/// Given `target/debug/build` (release=false), returns `target/release/build`.
+/// Given `target/llvm-cov-target/debug/build` (release=false), returns
+/// `target/llvm-cov-target/release/build`.
+fn sibling_build_root(build_root: &Path, is_release: bool) -> Option<PathBuf> {
+    let parent = build_root.parent()?; // e.g. target/debug
+    let grandparent = parent.parent()?; // e.g. target or target/llvm-cov-target
+    let sibling_profile = if is_release { DEBUG_DIR } else { RELEASE_DIR };
+    Some(grandparent.join(sibling_profile).join(BUILD_DIR))
 }
 
 fn search_cache_in_directory(build_root: &Path, current_out_dir: &Path) -> Option<CachedBuild> {

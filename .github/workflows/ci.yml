@@ -27,6 +27,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check runner info
+        shell: pwsh
+        run: |
+          Write-Host "OS: ${{ runner.os }}"
+          Write-Host "ImageOS: $env:ImageOS"
+          if ($IsWindows) {
+            systeminfo | findstr /B /C:"OS Name" /C:"OS Version"
+          } elseif ($IsLinux) {
+            cat /etc/os-release | Select-String '^PRETTY_NAME|^VERSION_ID'
+          } elseif ($IsMacOS) {
+            sw_vers
+          }
+
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
         with:
@@ -51,6 +64,10 @@ jobs:
           key: >
             ${{ runner.os }}-cargo-build-target-
             ${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Clear stale cmake build (macOS)
+        if: runner.os == 'macOS'
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Install libc++ (Linux)
         if: matrix.os == 'ubuntu-latest'
@@ -120,6 +137,10 @@ jobs:
           key: >
             ${{ matrix.os }}-cargo-${{ matrix.target }}-
             ${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Clear stale cmake build (macOS)
+        if: runner.os == 'macOS'
+        run: find target -path "*/build/ktx2-rw-*/out/KTX-Software-build/build" -type d -exec rm -rf {} + 2>/dev/null || true
 
       - name: Build for target
         run: cargo build --target ${{ matrix.target }} --release
