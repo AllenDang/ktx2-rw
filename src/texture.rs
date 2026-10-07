@@ -460,16 +460,25 @@ impl Ktx2Texture {
             return Err(result.into());
         }
 
-        // Safety: Check that we got valid data before proceeding
-        if data.is_null() || size == 0 {
+        if data.is_null() {
             return Err(Error::InvalidOperation);
         }
 
-        // Create Vec from the allocated memory - this is safe because:
-        // 1. data is non-null and size > 0 (checked above)
-        // 2. ktxTexture2_WriteToMemory allocates with malloc()
-        // 3. Vec::from_raw_parts will take ownership and free with the global allocator
-        let vec = unsafe { Vec::from_raw_parts(data, size, size) };
+        // ktxTexture2_WriteToMemory allocates the buffer with C malloc(), so it must be
+        // released with C free(). Handing it to Vec::from_raw_parts would free it with
+        // Rust's global allocator, which is undefined behavior whenever that allocator
+        // is not the system malloc (e.g. mimalloc, jemalloc). Copy into a Rust-owned
+        // Vec and give the original buffer back to libc.
+        let vec = if size == 0 {
+            Vec::new()
+        } else {
+            unsafe { std::slice::from_raw_parts(data, size) }.to_vec()
+        };
+        unsafe { libc::free(data as *mut libc::c_void) };
+
+        if vec.is_empty() {
+            return Err(Error::InvalidOperation);
+        }
 
         Ok(vec)
     }
