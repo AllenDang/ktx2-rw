@@ -37,6 +37,7 @@ tar = "0.4"
 flate2 = "1.0"
 
 [dev-dependencies]
+mimalloc = "0.1"
 image = "0.25"
 
 [[example]]
